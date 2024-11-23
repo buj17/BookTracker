@@ -1,10 +1,10 @@
-from sqlalchemy.exc import IntegrityError
 from typing import Any
 
-from PyQt6.QtWidgets import QMainWindow, QWidget, QMessageBox
 from PyQt6.QtCore import Qt
-from ui import AddGenre_ui, AddAuthor_ui, AddBook_ui
+from PyQt6.QtWidgets import QMainWindow, QWidget, QMessageBox
 from UserDatabaseManager import UserDatabaseManager
+from sqlalchemy.exc import IntegrityError
+from ui import AddGenre_ui, AddAuthor_ui, AddBook_ui
 
 
 class FormMode:

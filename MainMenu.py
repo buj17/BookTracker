@@ -1,11 +1,10 @@
-import os.path
 from typing import Any
 
+from AddForms import AddBook, AddGenre, AddAuthor, FormMode
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QMenu, QTableWidget, QTableWidgetItem, QMessageBox, QFileDialog
 from UserDatabaseManager import UserDatabaseManager, GenreInUseError, AuthorInUseError
-from AddForms import AddBook, AddGenre, AddAuthor, FormMode
 from ui import MainMenu_ui
 
 
@@ -68,7 +67,12 @@ class MainMenu(QMainWindow, MainMenu_ui.Ui_MainWindow):
         self.export_csv_action.triggered.connect(self.export_csv)
         self.import_csv_action.triggered.connect(self.import_csv)
 
+        self.load_app_images()
+
         self.statusBar().setStyleSheet('color: red')
+
+    def load_app_images(self):
+        self.filter_image_label.setPixmap(QPixmap('app_images/icons8-filter-48.png'))
 
     def update_user_genres(self):
         self.user_genres: dict[str, int] = dict(self.user_database_manager.get_user_genres())
