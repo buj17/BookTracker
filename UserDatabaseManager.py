@@ -3,8 +3,8 @@
 import csv
 from typing import Any, Sequence
 
-from database.models import Book, Author, Genre, UserAuthorLink, UserGenreLink
-from sqlalchemy import create_engine, select, update, delete, Row, and_
+from database.models import Book, Author, Genre, UserAuthorLink, UserGenreLink, ENGINE
+from sqlalchemy import select, update, delete, Row, and_
 from sqlalchemy.orm import sessionmaker
 
 
@@ -22,10 +22,10 @@ class CsvImportError(Exception):
 
 class UserDatabaseManager:
     """Основной класс для взаимодействия с базой данных"""
+
     def __init__(self, user_id: int):
         self.user_id = user_id
-        engine = create_engine('sqlite:///database/books_db.sqlite')
-        session_maker = sessionmaker(bind=engine)
+        session_maker = sessionmaker(bind=ENGINE)
         self.session = session_maker()
 
     def commit(self):

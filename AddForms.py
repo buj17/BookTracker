@@ -16,6 +16,7 @@ class FormMode:
 
 class AddGenre(QWidget, AddGenre_ui.Ui_Form):
     """Окно для добавления / редактирования жанров"""
+
     def __init__(self, parent: QMainWindow | Any, flags: Qt.WindowType, mode: int, user_id: int):
         super().__init__(parent=parent, flags=flags)
         self.setupUi(self)
@@ -67,6 +68,7 @@ class AddGenre(QWidget, AddGenre_ui.Ui_Form):
 
 class AddAuthor(QWidget, AddAuthor_ui.Ui_Form):
     """Окно для добавления / редактирования авторов"""
+
     def __init__(self, parent: QMainWindow | Any, flags: Qt.WindowType, mode: int, user_id: int):
         super().__init__(parent=parent, flags=flags)
         self.setupUi(self)
@@ -117,6 +119,7 @@ class AddAuthor(QWidget, AddAuthor_ui.Ui_Form):
 
 class AddBook(QWidget, AddBook_ui.Ui_Form):
     """Окно для добавления / редактирования книг"""
+
     def __init__(self, parent: QMainWindow | Any,
                  flags: Qt.WindowType,
                  mode: int,

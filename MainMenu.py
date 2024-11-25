@@ -12,6 +12,7 @@ from ui import MainMenu_ui
 
 class MainMenu(QMainWindow, MainMenu_ui.Ui_MainWindow):
     """Главное окно приложения"""
+
     def __init__(self, app_manager, user_id: int):
         super().__init__()
         self.setupUi(self)
@@ -41,14 +42,9 @@ class MainMenu(QMainWindow, MainMenu_ui.Ui_MainWindow):
         self.config_filter_author_combo_box()
         self.config_filter_genre_combo_box()
         self.config_filter_status_combo_box()
-        self.load_author_combo_box()
-        self.load_genre_combo_box()
+        self.update_book_searching()
 
-        if self.filterAuthorComboBox.count() == 0:
-            self.filterAuthorCheckBox.setDisabled(True)
-        if self.filterGenreComboBox.count() == 0:
-            self.filterGenreCheckBox.setDisabled(True)
-
+        # Настраиваем таблицу и список книг
         self.bookListWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.bookListWidget.customContextMenuRequested.connect(self.show_book_list_widget_context_menu)
         self.bookTableWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
