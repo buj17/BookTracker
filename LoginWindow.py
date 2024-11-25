@@ -1,3 +1,4 @@
+"""Реализация окна для входа в аккаунт"""
 from PyQt6.QtWidgets import QWidget
 from database.models import User
 from sqlalchemy import create_engine, select
@@ -6,6 +7,7 @@ from ui import LoginWindow_ui
 
 
 class LoginWindow(QWidget, LoginWindow_ui.Ui_Form):
+    """Окно для входа в аккаунт"""
     def __init__(self, app_manager):
         super().__init__()
         self.setupUi(self)
@@ -20,6 +22,7 @@ class LoginWindow(QWidget, LoginWindow_ui.Ui_Form):
         self.signUpButton.clicked.connect(self.register_user)
 
     def login(self):
+        """Слот для входа в аккаунт"""
         username, password = self.login_usernameEdit.text(), self.login_passwordEdit.text()
 
         session = self.session_maker()
@@ -42,6 +45,7 @@ class LoginWindow(QWidget, LoginWindow_ui.Ui_Form):
         session.close()
 
     def register_user(self):
+        """Слот для регистрации"""
         username = self.signUp_usernameEdit.text()
         password = self.signUp_passwordEdit.text()
 

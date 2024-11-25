@@ -1,3 +1,5 @@
+"""Реализация взаимодействия с базой данных"""
+
 import csv
 from typing import Any, Sequence
 
@@ -7,39 +9,45 @@ from sqlalchemy.orm import sessionmaker
 
 
 class GenreInUseError(Exception):
-    pass
+    """При попытке удалить жанр, который есть среди книг пользователя вызывается данное исключение"""
 
 
 class AuthorInUseError(Exception):
-    pass
+    """При попытке удалить автора, который есть среди книг пользователя вызывается данное исключение"""
 
 
 class CsvImportError(Exception):
-    pass
+    """При ошибке импортирования csv вызывается данное исключение"""
 
 
 class UserDatabaseManager:
+    """Основной класс для взаимодействия с базой данных"""
     def __init__(self, user_id: int):
         self.user_id = user_id
         engine = create_engine('sqlite:///database/books_db.sqlite')
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
+        session_maker = sessionmaker(bind=engine)
+        self.session = session_maker()
 
     def commit(self):
+        """Фиксирование изменений в базе данных"""
         self.session.commit()
 
     def close(self):
+        """Закрытие подключения к базе данных"""
         self.session.close()
 
     def rollback(self):
+        """Отмена изменений, если при работе с базой данных произошло исключение"""
         self.session.rollback()
 
     def get_user_authors(self) -> tuple[tuple, ...]:
+        """Возвращает кортеж, каждый элемент которого - кортеж с названием автора и его ИД"""
         statement = select(Author.title, Author.AuthorId).select_from(Author).join(UserAuthorLink).where(
             UserAuthorLink.UserId == int(self.user_id))
         return tuple(map(tuple, self.session.execute(statement).all()))
 
     def get_user_genres(self) -> tuple[tuple, ...]:
+        """Возвращает кортеж, каждый элемент которого - кортеж с названием жанра и его ИД"""
         statement = select(Genre.title, Genre.GenreId).select_from(Genre).join(UserGenreLink).where(
             UserGenreLink.UserId == int(self.user_id))
         return tuple(map(tuple, self.session.execute(statement).all()))
@@ -49,6 +57,7 @@ class UserDatabaseManager:
                      genre: str | None = None,
                      status: str | None = None,
                      sort_by: str | None = None) -> Sequence[Row[tuple[Any, Any, Any, Any, Any]]]:
+        """Возвращает информацию о книгах, подходящих по фильтрам и отсортированных по автору или названию"""
         sort_dict = {'Названию': Book.title, 'Автору': Author.title}
 
         statement = select(Book.BookId, Book.title, Author.title, Genre.title, Book.status).select_from(Book).where(
@@ -67,31 +76,40 @@ class UserDatabaseManager:
         return self.session.execute(statement).all()
 
     def search_genres(self, title: str) -> Sequence[Row[tuple[Any, Any]]]:
+        """Возвращает информацию о жанрах, название которых содержит title"""
         statement = select(Genre.GenreId, Genre.title).select_from(Genre).where(
             and_(UserGenreLink.UserId == self.user_id, Genre.title.like(f'%{title.lower()}%'))).join(
             UserGenreLink).order_by(Genre.title)
         return self.session.execute(statement).all()
 
     def search_authors(self, title: str) -> Sequence[Row[tuple[Any, Any]]]:
+        """Возвращает информацию об авторах, название которых содержит title"""
         statement = select(Author.AuthorId, Author.title).select_from(Author).where(
             and_(UserAuthorLink.UserId == self.user_id, Author.title.like(f'%{title.lower()}%'))).join(
             UserAuthorLink).order_by(Author.title)
         return self.session.execute(statement).all()
 
     def get_genre(self, genre_id: int) -> str:
+        """Возвращает название жанра по его ИД"""
         statement = select(Genre.title).select_from(Genre).where(Genre.GenreId == genre_id)
         return self.session.execute(statement).first()[0]
 
     def get_author(self, author_id: int) -> str:
+        """Возвращает название автора по его ИД"""
         statement = select(Author.title).select_from(Author).where(Author.AuthorId == author_id)
         return self.session.execute(statement).first()[0]
 
     def get_book(self, book_id: int) -> Row[tuple[Any, Any, Any, Any]]:
+        """Возвращает информацию о книге по его ИД"""
         statement = select(Book.title, Author.title, Genre.title, Book.status).select_from(Book).where(
             Book.BookId == book_id).join(Author).join(Genre)
         return self.session.execute(statement).first()
 
     def add_genre(self, title: str):
+        """Добавление жанра с названием title
+        Если данного жанра нет в таблице жанров, то добавляется новый жанр с названием title и берется его ИД;
+        Если данный жанр есть в таблице жанров, то берется ИД жанра с названием title;
+        После этого в таблицу user_genre_links добавляется запись с ИД пользователя и ИД жанра"""
         statement = select(Genre.GenreId).select_from(Genre).where(Genre.title == title.lower())
         genre_id = self.session.execute(statement).first()
         if genre_id is None:
@@ -107,10 +125,10 @@ class UserDatabaseManager:
         self.commit()
 
     def edit_genre(self, genre_id: int, title: str):
-        # statement = update(Genre).where(Genre.GenreId == int(genre_id)).values(title=title.lower())
-        # self.session.execute(statement)
-        # self.commit()
-
+        """Редактирование жанра с ИД genre_id: старое название заменяется на title;
+        Если жанра с новым названием нет в таблице жанров, то добавляется новый жанр с названием title и берется его ИД;
+        Если данный жанр есть в таблице жанров, то берется ИД жанра с названием title;
+        После этого в таблицу user_genre_links добавляется запись с ИД пользователя и ИД жанра"""
         find_genre_statement = select(Genre.GenreId).select_from(Genre).where(Genre.title == title)
         new_genre_id = self.session.execute(find_genre_statement).first()
         if new_genre_id is None:
@@ -127,6 +145,7 @@ class UserDatabaseManager:
         self.commit()
 
     def delete_genre(self, genre_id: int):
+        """Удаление из таблицы user_genre_links записи, где ИД жанра - genre_id"""
         find_genre_statement = select(Book.genre_id_book_fk).select_from(Book).where(
             and_(Book.genre_id_book_fk == genre_id, Book.user_id_book_fk == self.user_id))
         result = self.session.execute(find_genre_statement).first()
@@ -139,6 +158,10 @@ class UserDatabaseManager:
         self.commit()
 
     def add_author(self, title: str):
+        """Добавление автора с названием title
+        Если данного автора нет в таблице жанров, то добавляется новый автор с названием title и берется его ИД;
+        Если данный автор есть в таблице жанров, то берется ИД автора с названием title;
+        После этого в таблицу user_author_links добавляется запись с ИД пользователя и ИД автора"""
         statement = select(Author.AuthorId).select_from(Author).where(Author.title == title.lower())
         author_id = self.session.execute(statement).first()
         if author_id is None:
@@ -154,10 +177,11 @@ class UserDatabaseManager:
         self.commit()
 
     def edit_author(self, author_id: int, title: str):
-        # statement = update(Author).where(Author.AuthorId == author_id).values(title=title.lower())
-        # self.session.execute(statement)
-        # self.commit()
-
+        """Редактирование автора с ИД author_id: старое название заменяется на title;
+        Если автора с новым названием нет в таблице авторов,
+        то добавляется новый автор с названием title и берется его ИД;
+        Если данный жанр есть в таблице жанров, то берется ИД жанра с названием title;
+        После этого в таблицу user_genre_links добавляется запись с ИД пользователя и ИД жанра"""
         find_author_statement = select(Author.AuthorId).select_from(Author).where(Author.title == title)
         new_author_id = self.session.execute(find_author_statement).first()
         if new_author_id is None:
@@ -175,9 +199,7 @@ class UserDatabaseManager:
         self.commit()
 
     def delete_author(self, author_id: int):
-        # statement = delete(Author).where(Author.AuthorId == author_id)
-        # self.session.execute(statement)
-        # self.commit()
+        """Удаление из таблицы user_author_links записи, где ИД автора - author_id"""
 
         find_author_statement = select(Book.author_id_book_fk).select_from(Book).where(
             and_(Book.author_id_book_fk == author_id, Book.user_id_book_fk == self.user_id))
@@ -191,12 +213,14 @@ class UserDatabaseManager:
         self.commit()
 
     def add_book(self, title: str, author_id_book_fk: int, genre_id_book_fk: int, status: str):
+        """Добавление книги"""
         new_book = Book(title=title.lower(), author_id_book_fk=author_id_book_fk, genre_id_book_fk=genre_id_book_fk,
                         status=status, user_id_book_fk=self.user_id)
         self.session.add(new_book)
         self.commit()
 
     def edit_book(self, book_id: int, title: str, author_id_book_fk: int, genre_id_book_fk: int, status: str):
+        """Редактирование книги"""
         statement = update(Book).where(Book.BookId == book_id).values(title=title.lower(),
                                                                       author_id_book_fk=author_id_book_fk,
                                                                       genre_id_book_fk=genre_id_book_fk,
@@ -205,11 +229,14 @@ class UserDatabaseManager:
         self.commit()
 
     def delete_book(self, book_id: int):
+        """Удаление книги"""
         statement = delete(Book).where(Book.BookId == book_id)
         self.session.execute(statement)
         self.commit()
 
     def export_csv(self, filename: str):
+        """Экспорт книг в формате csv;
+        Создается файл filename и в него записывается информация о книгах (без указания пользователя)"""
         statement = select(Book.title, Author.title, Genre.title, Book.status).select_from(Book).where(
             Book.user_id_book_fk == self.user_id).join(Author).join(Genre)
 
@@ -221,6 +248,10 @@ class UserDatabaseManager:
             writer.writerows(user_book_data)
 
     def import_csv(self, filename: str):
+        """Импорт книг в формате csv;
+        Стирается вся информация о жанрах, авторах и книгах пользователя;
+        При чтении каждой записи добавляется жанр / автор при их отсутствии;
+        Добавляется книга"""
         self.clear_all_user_data()
 
         with open(filename, encoding='utf-8') as file:
@@ -246,6 +277,7 @@ class UserDatabaseManager:
                 self.add_book(record['Book'], author_dict[author_title], genre_dict[genre_title], record['Status'])
 
     def clear_all_user_data(self):
+        """Удаление всех книг, авторов и жанров пользователя"""
         clear_books_statement = delete(Book).where(Book.user_id_book_fk == self.user_id)
         clear_user_genre_links = delete(UserGenreLink).where(UserGenreLink.UserId == self.user_id)
         clear_user_author_links = delete(UserAuthorLink).where(UserAuthorLink.UserId == self.user_id)
