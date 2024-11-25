@@ -4,13 +4,13 @@ import os
 from sqlalchemy import Column, Integer, Text, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, declarative_base
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(current_dir, 'books_db.sqlite')
-engine = create_engine(f'sqlite:///{db_path}')
-Base = declarative_base()
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_db_path = os.path.join(_current_dir, 'books_db.sqlite')
+ENGINE = create_engine(f'sqlite:///{_db_path}')
+_Base = declarative_base()
 
 
-class User(Base):
+class User(_Base):
     """Модель таблицы для пользователей"""
     __tablename__ = 'users'
 
@@ -23,7 +23,7 @@ class User(Base):
     books = relationship('Book', backref='users', lazy=True)
 
 
-class Genre(Base):
+class Genre(_Base):
     """Модель таблицы для жанров"""
     __tablename__ = 'genres'
 
@@ -31,7 +31,7 @@ class Genre(Base):
     title = Column(Text)
 
 
-class Author(Base):
+class Author(_Base):
     """Модель таблицы для авторов"""
     __tablename__ = 'authors'
 
@@ -39,7 +39,7 @@ class Author(Base):
     title = Column(Text)
 
 
-class UserGenreLink(Base):
+class UserGenreLink(_Base):
     """Модель связующей таблицы жанров и пользователей, организующей связь многие ко многим
     Данная таблица нужна для того, чтобы у каждого пользователя был собственный набор жанров"""
     __tablename__ = 'user_genre_links'
@@ -48,7 +48,7 @@ class UserGenreLink(Base):
     GenreId = Column(Integer, ForeignKey('genres.GenreId'), primary_key=True)
 
 
-class UserAuthorLink(Base):
+class UserAuthorLink(_Base):
     """Модель связующей таблицы авторов и пользователей, организующей связь многие ко многим
     Данная таблица нужна для того, чтобы у каждого пользователя был собственный набор авторов"""
     __tablename__ = 'user_author_links'
@@ -57,8 +57,8 @@ class UserAuthorLink(Base):
     AuthorId = Column(Integer, ForeignKey('authors.AuthorId'), primary_key=True)
 
 
-class Book(Base):
-    """Модель таблицы книг"""
+class Book(_Base):
+    """Модель таблицы для книг"""
     __tablename__ = 'books'
 
     BookId = Column(Integer, primary_key=True)
@@ -70,4 +70,4 @@ class Book(Base):
 
 
 # Создаем базу данных при ее отсутствии
-Base.metadata.create_all(engine)
+_Base.metadata.create_all(ENGINE)
