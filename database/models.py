@@ -1,3 +1,4 @@
+"""Классы-модели таблиц в базе данных, реализованные на SQLAlchemy"""
 import os
 
 from sqlalchemy import Column, Integer, Text, ForeignKey, create_engine
@@ -10,6 +11,7 @@ Base = declarative_base()
 
 
 class User(Base):
+    """Модель таблицы для пользователей"""
     __tablename__ = 'users'
 
     UserId = Column(Integer, primary_key=True)
@@ -22,24 +24,24 @@ class User(Base):
 
 
 class Genre(Base):
+    """Модель таблицы для жанров"""
     __tablename__ = 'genres'
 
     GenreId = Column(Integer, primary_key=True)
     title = Column(Text)
 
-    # users = relationship('User', secondary='user_genre_links', backref='genres', lazy=True)
-
 
 class Author(Base):
+    """Модель таблицы для авторов"""
     __tablename__ = 'authors'
 
     AuthorId = Column(Integer, primary_key=True)
     title = Column(Text)
 
-    # users = relationship('User', secondary='user_author_links', backref='authors', lazy=True)
-
 
 class UserGenreLink(Base):
+    """Модель связующей таблицы жанров и пользователей, организующей связь многие ко многим
+    Данная таблица нужна для того, чтобы у каждого пользователя был собственный набор жанров"""
     __tablename__ = 'user_genre_links'
 
     UserId = Column(Integer, ForeignKey('users.UserId'), primary_key=True)
@@ -47,6 +49,8 @@ class UserGenreLink(Base):
 
 
 class UserAuthorLink(Base):
+    """Модель связующей таблицы авторов и пользователей, организующей связь многие ко многим
+    Данная таблица нужна для того, чтобы у каждого пользователя был собственный набор авторов"""
     __tablename__ = 'user_author_links'
 
     UserId = Column(Integer, ForeignKey('users.UserId'), primary_key=True)
@@ -54,6 +58,7 @@ class UserAuthorLink(Base):
 
 
 class Book(Base):
+    """Модель таблицы книг"""
     __tablename__ = 'books'
 
     BookId = Column(Integer, primary_key=True)
@@ -63,9 +68,6 @@ class Book(Base):
     status = Column(Text)
     user_id_book_fk = Column(Integer, ForeignKey('users.UserId'))
 
-    # users = relationship('User', backref='books', lazy=True)
-    # authors = relationship('Author', backref='books', lazy=True)
-    # genres = relationship('Genre', backref='books', lazy=True)
 
-
+# Создаем базу данных при ее отсутствии
 Base.metadata.create_all(engine)
