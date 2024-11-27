@@ -43,13 +43,13 @@ class UserDatabaseManager:
     def get_user_authors(self) -> tuple[tuple, ...]:
         """Возвращает кортеж, каждый элемент которого - кортеж с названием автора и его ИД"""
         statement = select(Author.title, Author.AuthorId).select_from(Author).join(UserAuthorLink).where(
-            UserAuthorLink.UserId == int(self.user_id))
+            UserAuthorLink.UserId == self.user_id)
         return tuple(map(tuple, self.session.execute(statement).all()))
 
     def get_user_genres(self) -> tuple[tuple, ...]:
         """Возвращает кортеж, каждый элемент которого - кортеж с названием жанра и его ИД"""
         statement = select(Genre.title, Genre.GenreId).select_from(Genre).join(UserGenreLink).where(
-            UserGenreLink.UserId == int(self.user_id))
+            UserGenreLink.UserId == self.user_id)
         return tuple(map(tuple, self.session.execute(statement).all()))
 
     def search_books(self, title: str | None = None,
@@ -254,27 +254,31 @@ class UserDatabaseManager:
         Добавляется книга"""
         self.clear_all_user_data()
 
-        with open(filename, encoding='utf-8') as file:
-            author_dict, genre_dict = {}, {}
+        try:
+            with open(filename, encoding='utf-8') as file:
+                author_dict, genre_dict = {}, {}
 
-            reader = csv.DictReader(file)
-            for record in reader:
-                record: dict
-                author_title: str = record['Author'].lower()
-                if author_title not in author_dict:
-                    self.add_author(author_title)
-                get_authorid_statement = select(Author.AuthorId).select_from(Author).where(Author.title == author_title)
-                author_id = self.session.execute(get_authorid_statement).one()[0]
-                author_dict[author_title] = author_id
+                reader = csv.DictReader(file)
+                for record in reader:
+                    record: dict
+                    author_title: str = record['Author'].lower()
+                    if author_title not in author_dict:
+                        self.add_author(author_title)
+                    get_authorid_statement = select(Author.AuthorId).select_from(Author).where(
+                        Author.title == author_title)
+                    author_id = self.session.execute(get_authorid_statement).one()[0]
+                    author_dict[author_title] = author_id
 
-                genre_title: str = record['Genre'].lower()
-                if genre_title not in genre_dict:
-                    self.add_genre(record['Genre'])
-                get_genre_id_statement = select(Genre.GenreId).select_from(Genre).where(Genre.title == genre_title)
-                genre_id = self.session.execute(get_genre_id_statement).one()[0]
-                genre_dict[genre_title] = genre_id
+                    genre_title: str = record['Genre'].lower()
+                    if genre_title not in genre_dict:
+                        self.add_genre(record['Genre'])
+                    get_genre_id_statement = select(Genre.GenreId).select_from(Genre).where(Genre.title == genre_title)
+                    genre_id = self.session.execute(get_genre_id_statement).one()[0]
+                    genre_dict[genre_title] = genre_id
 
-                self.add_book(record['Book'], author_dict[author_title], genre_dict[genre_title], record['Status'])
+                    self.add_book(record['Book'], author_dict[author_title], genre_dict[genre_title], record['Status'])
+        except Exception:
+            raise CsvImportError
 
     def clear_all_user_data(self):
         """Удаление всех книг, авторов и жанров пользователя"""
